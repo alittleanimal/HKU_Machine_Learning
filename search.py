@@ -4,7 +4,6 @@ by Pacman agents (in searchAgents.py).
 """
 
 import util
-import collections
 
 
 class SearchProblem:
@@ -50,6 +49,7 @@ class SearchProblem:
         """
         util.raiseNotDefined()
 
+
 def tinyMazeSearch(problem):
     """
     Returns a sequence of moves that solves tinyMaze.  For any other
@@ -58,7 +58,8 @@ def tinyMazeSearch(problem):
     from game import Directions
     s = Directions.SOUTH
     w = Directions.WEST
-    return  [s,s,w,s,w,w,s,w]
+    return [s, s, w, s, w, w, s, w]
+
 
 def depthFirstSearch(problem):
     """
@@ -75,25 +76,22 @@ def depthFirstSearch(problem):
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
     "*** YOUR CODE HERE ***"
-    result = dfsGsa(problem)
-    returnList = buildReturnDirections(result)
-    return returnList
+    return dfsGsa(problem)
+
 
 def breadthFirstSearch(problem):
     """
     Search the shallowest nodes in the search tree first.
     """
     "*** YOUR CODE HERE ***"
-    result = bfsGsa(problem)
-    returnList = buildReturnDirections(result)
-    return returnList
+    return bfsGsa(problem)
+
 
 def uniformCostSearch(problem):
     "Search the node of least total cost first. "
     "*** YOUR CODE HERE ***"
-    result = ucsGsa(problem)
-    returnList = buildReturnDirections(result)
-    return returnList
+    return ucsGsa(problem)
+
 
 def nullHeuristic(state, problem=None):
     """
@@ -102,135 +100,82 @@ def nullHeuristic(state, problem=None):
     """
     return 0
 
-def manhattanHeuristic(position, problem, info={}):
-    "The Manhattan distance heuristic for a PositionSearchProblem"
-    xy1 = position
-    xy2 = problem.goal
-    return abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1])
 
-def aStarSearch(problem, heuristic=manhattanHeuristic):
+def aStarSearch(problem, heuristic=nullHeuristic):
     "Search the node that has the lowest combined cost and heuristic first."
     "*** YOUR CODE HERE ***"
 
-    result = aStarFnc(problem, heuristic)
-    returnList = buildReturnDirections(result)
-    return returnList
+    return aStarFnc(problem, heuristic)
 
 
 def dfsGsa(problem):
-    frontier = collections.deque([problem.getStartState()])
+    frontier = util.Stack()
+    frontier.push((problem.getStartState(), []))
     exploreSet = set()
-    directionSet = collections.deque('A')
 
     while frontier:
-        node = frontier.pop()
-        directionNode = directionSet.pop()
-        # useless
-        if directionNode == 'A':
-            directionNode = ''
+        node, action = frontier.pop()
 
         if problem.isGoalState(node):
-            return directionNode
+            return action
         if node not in exploreSet:
             # print('Exploring:', node, '...')
             exploreSet.add(node)
             for child in problem.getSuccessors(node):
-                frontier.append(child[0])
-                directionSet.append(directionNode + child[1][0])
-            # print('Every frontier:', list(frontier))
-            # print(exploreSet)
-            # print(directionSet)
-            # input()
-        # else:
-        #     print('Already in set: ', node[-1], '......')
+                frontier.push((child[0], action + [child[1]]))
 
 
 def bfsGsa(problem):
-    frontier = collections.deque([problem.getStartState()])
+    frontier = util.Queue()
+    frontier.push((problem.getStartState(), []))
     exploreSet = []
-    directionSet = collections.deque('A')
 
     while frontier:
-        node = frontier.popleft()
-        directionNode = directionSet.popleft()
-        # useless
-        if directionNode == 'A':
-            directionNode = ''
+        node, action = frontier.pop()
 
         if problem.isGoalState(node):
-            return directionNode
-        # import pdb
-        # pdb.set_trace()
+            return action
         if node not in exploreSet:
+            # print('Exploring:', node, '...')
             exploreSet.append(node)
             for child in problem.getSuccessors(node):
-                frontier.append(child[0])
-                directionSet.append(directionNode + child[1][0])
+                frontier.push((child[0], action + [child[1]]))
 
 
 def ucsGsa(problem):
     frontier = util.PriorityQueue()
-    util.PriorityQueue.push(frontier, problem.getStartState(), 1)
-    exploreSet = set()
-    directionSet = util.PriorityQueue()
-    util.PriorityQueue.push(directionSet, 'A', 1)
+    for i in problem.getSuccessors(problem.getStartState()):
+        frontier.push((i[0], [i[1]], i[2]), i[2])
+    exploreSet = [problem.getStartState()]
 
     while frontier:
-        node = frontier.pop()
-        directionNode = directionSet.pop()
-        # useless
-        if directionNode == 'A':
-            directionNode = ''
-
+        node, action, cost = frontier.pop()
         if problem.isGoalState(node):
-            return directionNode
+            return action
         if node not in exploreSet:
-            exploreSet.add(node)
             for child in problem.getSuccessors(node):
-                util.PriorityQueue.push(frontier, child[0], child[2])
-                util.PriorityQueue.push(directionSet, directionNode + child[1][0], child[2])
+                if child[0] not in exploreSet:
+                    frontier.push((child[0], action + [child[1]], cost + child[2]), cost + child[2])
+        exploreSet.append(node)
 
 
 def aStarFnc(problem, heuristic):
     frontier = util.PriorityQueue()
-    util.PriorityQueue.push(frontier, problem.getStartState(), 1)
-    exploreSet = []
-    directionSet = util.PriorityQueue()
-    util.PriorityQueue.push(directionSet, 'A', 1)
+    for i in problem.getSuccessors(problem.getStartState()):
+        cost = i[2] + heuristic(i[0], problem)
+        frontier.push((i[0], [i[1]], i[2]), cost)
+    exploreSet = [problem.getStartState()]
 
     while frontier:
-        node = frontier.pop()
-        directionNode = directionSet.pop()
-        # useless
-        if directionNode == 'A':
-            directionNode = ''
-
+        node, action, cost = frontier.pop()
         if problem.isGoalState(node):
-            return directionNode
+            return action
         if node not in exploreSet:
-            exploreSet.append(node)
             for child in problem.getSuccessors(node):
-                util.PriorityQueue.push(frontier, child[0], child[2] + heuristic(child[0], problem))
-                util.PriorityQueue.push(directionSet, directionNode + child[1][0], child[2] + heuristic(child[0], problem))
-
-def buildReturnDirections(directions):
-    from game import Directions
-    s = Directions.SOUTH
-    w = Directions.WEST
-    e = Directions.EAST
-    n = Directions.NORTH
-    resultList = []
-    for direction in directions:
-        if direction == 'S':
-            resultList.append(s)
-        elif direction == 'W':
-            resultList.append(w)
-        elif direction == 'E':
-            resultList.append(e)
-        elif direction == 'N':
-            resultList.append(n)
-
-    return resultList
+                if child[0] not in exploreSet:
+                    item = (child[0], action + [child[1]], cost + child[2])
+                    frontier.push(item, cost + child[2] + heuristic(child[0], problem))
+        exploreSet.append(node)
 
 
 # Abbreviations
